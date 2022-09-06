@@ -14,46 +14,38 @@ import random
 from numba import jit, njit
 
 # AWGNの作成
-# @njit
-def make_AWGN(IQ_R, IQ_G, IQ_B, l, r, noise_db, rs_db):
+# @jit
+def make_AWGN(l, r, noise_db, rs_db, av_TX):
     SNR = rs_db - noise_db
     IQ_R_noise = []
     IQ_G_noise = []
     IQ_B_noise = []
 
+    av_noise = av_TX / 10 **(SNR /10)
+
     for i in range(int((l * r) / 2)):
 
-        No = abs(IQ_R[i].real) / (10 ** (SNR / 20))
-        Re = np.random.normal(0, No)
-
-        No = abs(IQ_R[i].imag) / (10 ** (SNR / 20))
-        Im = np.random.normal(0, No)
+        Re = np.random.normal(0, np.sqrt(av_noise))
+        Im = np.random.normal(0, np.sqrt(av_noise))
 
         IQ_R_noise.append(Re + Im * 1j)
 
     for i in range(int((l * r) / 2)):
-        
-        No = abs(IQ_G[i].real) / (10 ** (SNR / 20))
-        Re = np.random.normal(0, No)
-
-        No = abs(IQ_G[i].imag) / (10 ** (SNR / 20))
-        Im = np.random.normal(0, No)
+        Re = np.random.normal(0, np.sqrt(av_noise))
+        Im = np.random.normal(0,np.sqrt(av_noise))
 
         IQ_G_noise.append(Re + Im * 1j)
 
     for i in range(int((l * r) / 2)):
 
-        No = abs(IQ_B[i].real) / (10 ** (SNR / 20))
-        Re = np.random.normal(0, No)
-
-        No = abs(IQ_B[i].imag) / (10 ** (SNR / 20))
-        Im = np.random.normal(0, No)
+        Re = np.random.normal(0, np.sqrt(av_noise))
+        Im = np.random.normal(0, np.sqrt(av_noise))
        
         IQ_B_noise.append(Re + Im * 1j)
     return IQ_R_noise, IQ_G_noise, IQ_B_noise, SNR
 
 # ノイズの入ったIQ信号に(パスロスとシャードウイングをSNRより)
-# @njit
+# @jit
 def add_noise(l, r, IQ_R, IQ_G, IQ_B, IQ_R_noise, IQ_G_noise, IQ_B_noise):
     IQ_R_n = []
     IQ_G_n = []
@@ -81,35 +73,36 @@ def add_noise(l, r, IQ_R, IQ_G, IQ_B, IQ_R_noise, IQ_G_noise, IQ_B_noise):
 def change_chanel(l, r, rs_db, IQ_R_n, IQ_G_n, IQ_B_n):
     IQ_r_R = []
     for i in range(int((l * r) / 2)):
-            # レイリーフェージングの受信電力
-            rf = np.random.rayleigh(1.0)
-            db_rf = 10 * math.log(rf)
-            # I信号，Q信号をそれぞれ変化（ここでのrs_dbはパスロスとシャドーイングの和)
-            IQ_r_R.append((10 ** ((rs_db + db_rf) / 20)) * IQ_R_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_R_n[i].imag * 1j)
-            # # レイリーフェージングなし
-            # IQ_r_R.append((10 ** ((rs_db) / 20)) * IQ_R_n[i].real + (10 ** ((rs_db) / 20)) * IQ_R_n[i].imag * 1j) 
+            # # レイリーフェージングの受信電力
+            # rf = np.random.rayleigh(1.0)
+            # db_rf = 10 * math.log(rf)
+            # # I信号，Q信号をそれぞれ変化（ここでのrs_dbはパスロスとシャドーイングの和)
+            # IQ_r_R.append((10 ** ((rs_db + db_rf) / 20)) * IQ_R_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_R_n[i].imag * 1j)
+            # レイリーフェージングなし
+            IQ_r_R.append((10 ** ((rs_db) / 20)) * IQ_R_n[i].real + (10 ** ((rs_db) / 20)) * IQ_R_n[i].imag * 1j) 
 
     IQ_r_G = []
     for i in range(int((l * r) / 2)):
-            # レイリーフェージングの受信電力
-            rf = np.random.rayleigh(1.0)
-            db_rf = 10 * math.log(rf)
-            IQ_r_G.append((10 ** ((rs_db + db_rf) / 20)) * IQ_G_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_G_n[i].imag * 1j)
-            # # レイリーフェージングなし
-            # IQ_r_G.append((10 ** ((rs_db) / 20)) * IQ_G_n[i].real + (10 ** ((rs_db) / 20)) * IQ_G_n[i].imag * 1j) 
+            # # レイリーフェージングの受信電力
+            # rf = np.random.rayleigh(1.0)
+            # db_rf = 10 * math.log(rf)
+            # IQ_r_G.append((10 ** ((rs_db + db_rf) / 20)) * IQ_G_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_G_n[i].imag * 1j)
+            # レイリーフェージングなし
+            IQ_r_G.append((10 ** ((rs_db) / 20)) * IQ_G_n[i].real + (10 ** ((rs_db) / 20)) * IQ_G_n[i].imag * 1j) 
 
     IQ_r_B = []
     for i in range(int((l * r) / 2)):
-            # レイリーフェージングの受信電力
-            rf = np.random.rayleigh(1.0)
-            db_rf = 10 * math.log(rf)
-            IQ_r_B.append((10 ** ((rs_db + db_rf) / 20)) * IQ_B_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_B_n[i].imag * 1j)
-            # # レイリーフェージングなし
-            # IQ_r_B.append((10 ** ((rs_db) / 20)) * IQ_B_n[i].real + (10 ** ((rs_db) / 20)) * IQ_B_n[i].imag * 1j) 
+            # # レイリーフェージングの受信電力
+            # rf = np.random.rayleigh(1.0)
+            # db_rf = 10 * math.log(rf)
+            # IQ_r_B.append((10 ** ((rs_db + db_rf) / 20)) * IQ_B_n[i].real + (10 ** ((rs_db + db_rf) / 20)) * IQ_B_n[i].imag * 1j)
+            # レイリーフェージングなし
+            IQ_r_B.append((10 ** ((rs_db) / 20)) * IQ_B_n[i].real + (10 ** ((rs_db) / 20)) * IQ_B_n[i].imag * 1j) 
     return IQ_r_R, IQ_r_G, IQ_r_B
 
+
 # 復号に必要なノイズ対角行列の作成に必要な各行のノイズの和の導出(確認)
-# @njit
+# @jit
 def noise_for_reconstruction(l, r, IQ_R_noise, IQ_G_noise, IQ_B_noise, n):
     noise = np.empty([int(l * r), 3])
     for i in range(int((l * r) / 2)):
@@ -130,7 +123,7 @@ def noise_for_reconstruction(l, r, IQ_R_noise, IQ_G_noise, IQ_B_noise, n):
     return noise_sum
 
 # IQ信号を元に戻す
-# @njit
+# @jit
 def IQ_to_matrix(l, r,  IQ_r_R, IQ_r_G, IQ_r_B, n):
     re_HT = np.empty([int(l * r), 3])
     for i in range(int((l * r) / 2)):
@@ -147,10 +140,10 @@ def IQ_to_matrix(l, r,  IQ_r_R, IQ_r_G, IQ_r_B, n):
     return y
 
 
+# main
+def trans(IQ_R, IQ_G, IQ_B, l, r, n, noise_db, rs_db, av_TX):
 
-def trans(IQ_R, IQ_G, IQ_B, l, r, n, noise_db, rs_db):
-
-    IQ_R_noise, IQ_G_noise, IQ_B_noise, SNR = make_AWGN(IQ_R, IQ_G, IQ_B, l, r, noise_db, rs_db)
+    IQ_R_noise, IQ_G_noise, IQ_B_noise, SNR = make_AWGN(l, r, noise_db, rs_db, av_TX)
 
     IQ_R_n, IQ_G_n, IQ_B_n =  add_noise(l, r, IQ_R, IQ_G, IQ_B, IQ_R_noise, IQ_G_noise, IQ_B_noise)
 
