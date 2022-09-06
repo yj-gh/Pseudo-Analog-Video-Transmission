@@ -9,4 +9,4 @@ python main.py
 # Note
 The image used should have a resolution in multiples of 8 for both rows and columns.
 
-channel.py adapts changes in the wireless environment to signal changes. In practice, it adds path loss, shadowing, multipath fading, and signal changes due to noise.
+channel.py adapts changes in the wireless environment to signal changes. In practice, it adds path loss, shadowing, Rayleigh fading, and signal changes due to noise.
